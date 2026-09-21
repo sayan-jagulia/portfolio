@@ -94,7 +94,7 @@ With a focus on performance, accessibility, and user experience, this portfolio 
 
 **1. Clone the Repository**
 ```bash
-git clone https://github.com/SaYaN00101/portfolio.git
+git clone https://github.com/sayan-jagulia/portfolio.git
 cd portfolio
 ```
 

@@ -1,8 +1,61 @@
-// Minimal JS: mobile menu toggle, smooth scroll, year placeholder, dark/light mode
+// Portfolio JS: typewriter, mobile menu, smooth scroll, theme toggle, scroll reveal
 function init() {
   // year
   const yearEl = document.getElementById('year');
   if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+  // ── Typewriter effect ──────────────────────────────────────
+  const typedEl = document.getElementById('typed-text');
+  if (typedEl) {
+    const phrases = [
+      'BCA Graduate & MCA Student',
+      'Full Stack Developer',
+      'PHP · Python · Java',
+      'Open to Internships & Jobs',
+    ];
+    let phraseIndex = 0;
+    let charIndex = 0;
+    let isDeleting = false;
+    let typingTimer;
+
+    function type() {
+      const current = phrases[phraseIndex];
+      if (isDeleting) {
+        typedEl.textContent = current.slice(0, charIndex - 1);
+        charIndex--;
+      } else {
+        typedEl.textContent = current.slice(0, charIndex + 1);
+        charIndex++;
+      }
+
+      let delay = isDeleting ? 40 : 75;
+
+      if (!isDeleting && charIndex === current.length) {
+        // Pause at end before deleting
+        delay = 1800;
+        isDeleting = true;
+      } else if (isDeleting && charIndex === 0) {
+        isDeleting = false;
+        phraseIndex = (phraseIndex + 1) % phrases.length;
+        delay = 400;
+      }
+
+      typingTimer = setTimeout(type, delay);
+    }
+
+    // Small initial delay so hero entrance animation plays first
+    setTimeout(type, 900);
+
+    // Pause typing when tab is not visible, resume on return
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        clearTimeout(typingTimer);
+      } else {
+        typingTimer = setTimeout(type, 400);
+      }
+    });
+  }
+  // ──────────────────────────────────────────────────────────
 
   // Theme toggle
   const themeToggle = document.getElementById('theme-toggle');
@@ -31,21 +84,18 @@ function init() {
     }
   }
 
+  // Contact form handling
   // Contact form handling for Web3Forms
   const contactForm = document.getElementById('contact-form-element');
   if (contactForm) {
-    const submitBtn = contactForm.querySelector('button[type="submit"]');
     contactForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const formStatus = document.getElementById('form-status');
       
       try {
-        if (submitBtn) {
-          submitBtn.disabled = true;
-          submitBtn.textContent = 'Sending message...';
-        }
+        // Show loading message
         formStatus.textContent = 'Sending message...';
-        formStatus.className = 'form-status';
+        formStatus.className = '';
         
         // Submit to Web3Forms
         const response = await fetch('https://api.web3forms.com/submit', {
@@ -72,11 +122,6 @@ function init() {
         formStatus.textContent = '✗ Error sending message. Please try again or contact directly.';
         formStatus.classList.add('error');
         console.error('Form submission error:', error);
-      } finally {
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Send Message';
-        }
       }
     });
   }
@@ -234,50 +279,10 @@ function init() {
   }
   document.addEventListener('keydown', focusTrap);
 
-  // Scrollspy: highlight active nav link on scroll
-  const sections = document.querySelectorAll('section[id]');
-  const desktopNavLinks = document.querySelectorAll('.main-nav a');
-  const mobileNavLinks = document.querySelectorAll('.mobile-list a');
-
-  function updateActiveNav() {
-    let currentId = '';
-    const scrollPosition = (window.scrollY || window.pageYOffset || 0) + 140;
-
-    sections.forEach(section => {
-      const top = section.offsetTop;
-      const height = section.offsetHeight;
-      if (scrollPosition >= top && scrollPosition < top + height) {
-        currentId = section.getAttribute('id');
-      }
-    });
-
-    if (currentId) {
-      desktopNavLinks.forEach(link => {
-        const href = link.getAttribute('href');
-        if (href === `#${currentId}`) {
-          link.classList.add('active');
-        } else {
-          link.classList.remove('active');
-        }
-      });
-      mobileNavLinks.forEach(link => {
-        const href = link.getAttribute('href');
-        if (href === `#${currentId}`) {
-          link.classList.add('active');
-        } else {
-          link.classList.remove('active');
-        }
-      });
-    }
-  }
-
-  window.addEventListener('scroll', updateActiveNav, { passive: true });
-  updateActiveNav();
-
   // Reveal animations using IntersectionObserver (stagger + reduced-motion aware)
   document.body.classList.add('js-loaded');
   const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const revealEls = document.querySelectorAll('.card, .project-card, .skill-card, .timeline-item');
+  const revealEls = document.querySelectorAll('.card, .project-card, .skill-card, .timeline-item, .cert-card, .contact-card');
   if (prefersReduced) {
     revealEls.forEach(el => el.classList.add('in-view'));
   } else if ('IntersectionObserver' in window) {
@@ -285,13 +290,13 @@ function init() {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           const el = entry.target;
-          const index = Array.from(revealEls).indexOf(el) % 6;
-          el.style.transitionDelay = `${index * 0.06}s`;
+          const index = Array.from(revealEls).indexOf(el) % 8;
+          el.style.transitionDelay = `${index * 0.055}s`;
           el.classList.add('in-view');
           obs.unobserve(el);
         }
       });
-    }, { threshold: 0.1, rootMargin: '0px 0px -6% 0px' });
+    }, { threshold: 0.08, rootMargin: '0px 0px -4% 0px' });
     revealEls.forEach(el => observer.observe(el));
   } else {
     revealEls.forEach(el => el.classList.add('in-view'));

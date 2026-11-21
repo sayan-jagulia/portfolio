@@ -369,7 +369,7 @@ Connect with me:
 - 💼 **LinkedIn:** [sayan-jagulia](https://linkedin.com/in/sayan-jagulia)
 - 💻 **GitHub:** [@sayan-jagulia](https://github.com/sayan-jagulia)
 - 📧 **Email:** [sayanjagulia489@gmail.com](mailto:sayanjagulia489@gmail.com)
-- 🌐 **Portfolio:** [portfolio](https://sayan00101.github.io/portfolio/)
+- 🌐 **Portfolio:** [portfolio](https://sayan-jagulia.github.io/portfolio/)
 
 ---
 

@@ -1,310 +1,436 @@
-// Portfolio JS: typewriter, mobile menu, smooth scroll, theme toggle, scroll reveal
-function init() {
-  // year
-  const yearEl = document.getElementById('year');
-  if (yearEl) yearEl.textContent = new Date().getFullYear();
+(() => {
+  "use strict";
 
-  // ── Typewriter effect ──────────────────────────────────────
-  const typedEl = document.getElementById('typed-text');
-  if (typedEl) {
-    const phrases = [
-      'BCA Graduate & MCA Student',
-      'Full Stack Developer',
-      'PHP · Python · Java',
-      'Open to Internships & Jobs',
-    ];
-    let phraseIndex = 0;
-    let charIndex = 0;
-    let isDeleting = false;
-    let typingTimer;
+  const doc = document;
+  const body = doc.body;
 
-    function type() {
-      const current = phrases[phraseIndex];
-      if (isDeleting) {
-        typedEl.textContent = current.slice(0, charIndex - 1);
-        charIndex--;
-      } else {
-        typedEl.textContent = current.slice(0, charIndex + 1);
-        charIndex++;
-      }
+  /* ------------------------------------------------------------------------
+     Header state
+     ------------------------------------------------------------------------ */
 
-      let delay = isDeleting ? 40 : 75;
+  const header = doc.getElementById("site-header");
+  let scrollTicking = false;
 
-      if (!isDeleting && charIndex === current.length) {
-        // Pause at end before deleting
-        delay = 1800;
-        isDeleting = true;
-      } else if (isDeleting && charIndex === 0) {
-        isDeleting = false;
-        phraseIndex = (phraseIndex + 1) % phrases.length;
-        delay = 400;
-      }
-
-      typingTimer = setTimeout(type, delay);
+  const updateHeader = () => {
+    if (header) {
+      header.classList.toggle("is-scrolled", window.scrollY > 8);
     }
+    scrollTicking = false;
+  };
 
-    // Small initial delay so hero entrance animation plays first
-    setTimeout(type, 900);
-
-    // Pause typing when tab is not visible, resume on return
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        clearTimeout(typingTimer);
-      } else {
-        typingTimer = setTimeout(type, 400);
+  updateHeader();
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (!scrollTicking) {
+        window.requestAnimationFrame(updateHeader);
+        scrollTicking = true;
       }
-    });
-  }
-  // ──────────────────────────────────────────────────────────
+    },
+    { passive: true }
+  );
 
-  // Theme toggle
-  const themeToggle = document.getElementById('theme-toggle');
-  if (themeToggle) {
-    // Check for saved theme preference or default to dark
-    const currentTheme = localStorage.getItem('theme') || 'dark';
-    applyTheme(currentTheme);
-    
-    themeToggle.addEventListener('click', () => {
-      const body = document.body;
-      const newTheme = body.classList.contains('light') ? 'dark' : 'light';
-      applyTheme(newTheme);
-    });
-  }
+  /* ------------------------------------------------------------------------
+     Mobile menu
+     ------------------------------------------------------------------------ */
 
-  function applyTheme(theme) {
-    const body = document.body;
-    body.classList.remove('dark', 'light');
-    body.classList.add(theme);
-    localStorage.setItem('theme', theme);
-    
-    // Update icon
-    if (themeToggle) {
-      const icon = themeToggle.querySelector('i');
-      icon.className = theme === 'light' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-    }
-  }
+  const menu = doc.getElementById("mobile-menu");
+  const menuToggle = doc.getElementById("menu-toggle");
+  const menuClose = doc.getElementById("menu-close");
+  const main = doc.getElementById("main");
+  const footer = doc.querySelector(".site-footer");
+  let lastFocused = null;
 
-  // Contact form handling
-  // Contact form handling for Web3Forms
-  const contactForm = document.getElementById('contact-form-element');
-  if (contactForm) {
-    contactForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const formStatus = document.getElementById('form-status');
-      
-      try {
-        // Show loading message
-        formStatus.textContent = 'Sending message...';
-        formStatus.className = '';
-        
-        // Submit to Web3Forms
-        const response = await fetch('https://api.web3forms.com/submit', {
-          method: 'POST',
-          body: new FormData(contactForm)
-        });
+  const getMenuFocusables = () => {
+    if (!menu) return [];
+    return Array.from(menu.querySelectorAll('a[href], button:not([disabled])'));
+  };
 
-        const result = await response.json();
-        
-        if (result.success) {
-          formStatus.textContent = '✓ Message sent successfully! I\'ll get back to you soon.';
-          formStatus.classList.add('success');
-          contactForm.reset();
-          
-          // Clear message after 5 seconds
-          setTimeout(() => {
-            formStatus.textContent = '';
-            formStatus.classList.remove('success');
-          }, 5000);
-        } else {
-          throw new Error(result.message || 'Form submission failed');
-        }
-      } catch (error) {
-        formStatus.textContent = '✗ Error sending message. Please try again or contact directly.';
-        formStatus.classList.add('error');
-        console.error('Form submission error:', error);
-      }
-    });
-  }
+  const focusTarget = (target) => {
+    if (!target) return;
+    target.setAttribute("tabindex", "-1");
+    target.focus({ preventScroll: true });
+    target.addEventListener(
+      "blur",
+      () => {
+        target.removeAttribute("tabindex");
+      },
+      { once: true }
+    );
+  };
 
-  // Mobile menu
-  const hamburger = document.getElementById('hamburger');
-  const mobileMenu = document.getElementById('mobile-menu');
-  const mobileClose = document.getElementById('mobile-close');
-  // saved scroll position to restore after closing menu
-  let savedScrollY = 0;
+  const onMenuKeydown = (event) => {
+    if (!menu || menu.hidden) return;
 
-  function openMenu() {
-    if (!mobileMenu || !hamburger) return;
-    mobileMenu.classList.add('open');
-    hamburger.classList.add('is-open');
-    // lock scroll by fixing body position and saving current scroll
-    savedScrollY = window.scrollY || window.pageYOffset || 0;
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${savedScrollY}px`;
-    document.body.style.left = '0';
-    document.body.style.right = '0';
-    document.body.style.width = '100%';
-    document.body.classList.add('menu-open');
-    hamburger.setAttribute('aria-expanded','true');
-    mobileMenu.setAttribute('aria-hidden','false');
-    mobileMenu.setAttribute('aria-modal','true');
-    // focus first link for accessibility
-    const firstLink = mobileMenu.querySelector('a');
-    firstLink && firstLink.focus();
-  }
-  function closeMenu() {
-    if (!mobileMenu || !hamburger) return;
-    mobileMenu.classList.remove('open');
-    hamburger.classList.remove('is-open');
-    // restore scroll and remove fixed positioning
-    document.body.style.position = '';
-    const prevTop = document.body.style.top;
-    document.body.style.top = '';
-    document.body.style.left = '';
-    document.body.style.right = '';
-    document.body.style.width = '';
-    document.body.classList.remove('menu-open');
-    hamburger.setAttribute('aria-expanded','false');
-    mobileMenu.setAttribute('aria-hidden','true');
-    mobileMenu.removeAttribute('aria-modal');
-    // restore scroll to previous position
-    window.scrollTo(0, savedScrollY || 0);
-    // return focus to hamburger for keyboard users
-    hamburger && hamburger.focus();
-  }
-
-  function toggleMenuFromBtn(e) {
-    if (e) { e.preventDefault && e.preventDefault(); }
-    const expanded = hamburger.getAttribute('aria-expanded') === 'true';
-    expanded ? closeMenu() : openMenu();
-  }
-
-  hamburger && hamburger.addEventListener('click', toggleMenuFromBtn);
-  // Use click for toggling (sufficient for both desktop and mobile). Avoid touchstart to prevent double-invokes on some devices.
-
-  // close via close button
-  mobileClose && mobileClose.addEventListener('click', closeMenu);
-
-  // Close and scroll when clicking internal links inside the mobile menu
-  // We'll handle mobile menu links inside the main anchor handler for smooth behavior.
-
-  // Make the mobile dock links focusable and add active state on click
-  document.querySelectorAll('.mobile-list a').forEach(a => {
-    a.addEventListener('click', function () {
-      document.querySelectorAll('.mobile-list a').forEach(x => x.classList.remove('active'));
-      this.classList.add('active');
-    });
-  });
-
-  // Click outside the nav area in mobile menu should close the menu
-  mobileMenu && mobileMenu.addEventListener('click', function (e) {
-    if (e.target === mobileMenu) closeMenu();
-  });
-
-  // Close the mobile menu when clicking or tapping anywhere outside the menu (works on mobile and desktop)
-  // Use pointerdown to capture mouse/touch/pen input early and avoid double-invokes.
-  document.addEventListener('pointerdown', function (e) {
-    if (!mobileMenu || !mobileMenu.classList.contains('open')) return;
-    // If the click/tap is inside the mobile menu or on the hamburger button, ignore it
-    const clickedInsideMenu = mobileMenu.contains(e.target);
-    const clickedOnHamburger = hamburger && hamburger.contains(e.target);
-    if (!clickedInsideMenu && !clickedOnHamburger) {
+    if (event.key === "Escape") {
+      event.preventDefault();
       closeMenu();
+      return;
     }
-  }, true);
 
-  // Toggle aria-label for hamburger (accessibility)
-  function updateAria() {
-    if (!hamburger) return;
-    const expanded = hamburger.getAttribute('aria-expanded') === 'true';
-    hamburger.setAttribute('aria-label', expanded ? 'Close menu' : 'Open menu');
-  }
+    if (event.key !== "Tab") return;
 
-  // ensure aria-label is updated on toggle
-  const ariaObserver = new MutationObserver(updateAria);
-  if (hamburger) ariaObserver.observe(hamburger, { attributes: true, attributeFilter: ['aria-expanded'] });
+    const focusables = getMenuFocusables();
+    if (!focusables.length) return;
 
-  // Smooth scroll for internal hash links.
-  // If the click comes from the open mobile menu, close the menu first then scroll to prevent overlay reflows blocking the scroll.
-  document.querySelectorAll('a[href^="#"]').forEach(a => {
-    a.addEventListener('click', function (e) {
-      const href = this.getAttribute('href');
-      // Ignore href="#" placeholders
-      if (href === '#') return;
-      const targetId = href.slice(1);
-      if (!targetId) return;
-      const target = document.getElementById(targetId);
-      if (target) {
-        e.preventDefault();
-        // If the mobile menu is open, close the overlay first, then scroll into view to avoid conflicts.
-        if (mobileMenu && mobileMenu.classList.contains('open')) {
-          closeMenu();
-          // wait for close animation to complete (align with CSS transition ~280-350ms)
-          setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 320);
-        } else {
-          // normal flow
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }
-    });
-  });
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
 
-  // Close mobile menu on Escape only when it's open
-  document.addEventListener('keydown', function(e){
-    if (e.key === 'Escape' && mobileMenu && mobileMenu.classList.contains('open')) closeMenu();
-  });
-
-  // Keep mobile menu closed when resizing to desktop
-  window.addEventListener('resize', function () {
-    if (window.innerWidth >= 1024 && mobileMenu && mobileMenu.classList.contains('open')) {
-      closeMenu();
-    }
-  });
-
-  // Basic focus trap for mobile menu while open (Tab/Shift+Tab)
-  function focusTrap(e) {
-    if (!mobileMenu || !mobileMenu.classList.contains('open')) return;
-    if (e.key !== 'Tab') return;
-    const focusable = mobileMenu.querySelectorAll('a, button, input, textarea, select, [tabindex]:not([tabindex="-1"])');
-    if (!focusable.length) return;
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
+    if (event.shiftKey && doc.activeElement === first) {
+      event.preventDefault();
       last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
+    } else if (!event.shiftKey && doc.activeElement === last) {
+      event.preventDefault();
       first.focus();
     }
-  }
-  document.addEventListener('keydown', focusTrap);
+  };
 
-  // Reveal animations using IntersectionObserver (stagger + reduced-motion aware)
-  document.body.classList.add('js-loaded');
-  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const revealEls = document.querySelectorAll('.card, .project-card, .skill-card, .timeline-item, .cert-card, .contact-card');
-  if (prefersReduced) {
-    revealEls.forEach(el => el.classList.add('in-view'));
-  } else if ('IntersectionObserver' in window) {
-    const observer = new IntersectionObserver((entries, obs) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const el = entry.target;
-          const index = Array.from(revealEls).indexOf(el) % 8;
-          el.style.transitionDelay = `${index * 0.055}s`;
-          el.classList.add('in-view');
-          obs.unobserve(el);
+  function openMenu() {
+    if (!menu || !menuToggle) return;
+
+    lastFocused = doc.activeElement;
+    menu.hidden = false;
+    menuToggle.setAttribute("aria-expanded", "true");
+    menuToggle.setAttribute("aria-label", "Close menu");
+    body.classList.add("menu-open");
+
+    if (main) main.setAttribute("inert", "");
+    if (header) header.setAttribute("inert", "");
+    if (footer) footer.setAttribute("inert", "");
+
+    doc.addEventListener("keydown", onMenuKeydown);
+
+    window.requestAnimationFrame(() => {
+      if (menuClose) menuClose.focus();
+    });
+  }
+
+  function closeMenu({ restoreFocus = true } = {}) {
+    if (!menu || menu.hidden) return;
+
+    menu.hidden = true;
+    if (menuToggle) {
+      menuToggle.setAttribute("aria-expanded", "false");
+      menuToggle.setAttribute("aria-label", "Open menu");
+    }
+    body.classList.remove("menu-open");
+
+    if (main) main.removeAttribute("inert");
+    if (header) header.removeAttribute("inert");
+    if (footer) footer.removeAttribute("inert");
+
+    doc.removeEventListener("keydown", onMenuKeydown);
+
+    if (restoreFocus && lastFocused instanceof HTMLElement) {
+      lastFocused.focus();
+    }
+  }
+
+  if (menuToggle && menu) {
+    menuToggle.addEventListener("click", () => {
+      if (menu.hidden) {
+        openMenu();
+      } else {
+        closeMenu();
+      }
+    });
+  }
+
+  if (menuClose) {
+    menuClose.addEventListener("click", () => closeMenu());
+  }
+
+  if (menu) {
+    menu.addEventListener("click", (event) => {
+      if (event.target === menu) {
+        closeMenu();
+        return;
+      }
+
+      const link = event.target.closest('a[href^="#"]');
+      if (!link) return;
+
+      event.preventDefault();
+
+      const hash = link.getAttribute("href");
+      const target = doc.querySelector(hash);
+      closeMenu({ restoreFocus: false });
+
+      if (window.history && typeof window.history.pushState === "function") {
+        window.history.pushState(null, "", hash);
+      }
+
+      if (target) {
+        window.setTimeout(() => {
+          focusTarget(target);
+          target.scrollIntoView({ block: "start", behavior: "instant" });
+        }, 0);
+      }
+    });
+  }
+
+  const desktopQuery = window.matchMedia("(min-width: 961px)");
+  const handleDesktopChange = (event) => {
+    if (event.matches) closeMenu({ restoreFocus: false });
+  };
+
+  if (typeof desktopQuery.addEventListener === "function") {
+    desktopQuery.addEventListener("change", handleDesktopChange);
+  } else if (typeof desktopQuery.addListener === "function") {
+    desktopQuery.addListener(handleDesktopChange);
+  }
+
+  /* ------------------------------------------------------------------------
+     Active navigation
+     ------------------------------------------------------------------------ */
+
+  const sectionIds = ["work", "about", "skills", "education", "contact"];
+  const sections = sectionIds
+    .map((id) => doc.getElementById(id))
+    .filter((section) => section instanceof HTMLElement);
+
+  const navLinks = Array.from(
+    doc.querySelectorAll('.desktop-nav a[href^="#"], .mobile-nav a[href^="#"]')
+  );
+
+  const setActiveSection = (id) => {
+    navLinks.forEach((link) => {
+      if (id && link.getAttribute("href") === `#${id}`) {
+        link.setAttribute("aria-current", "true");
+      } else {
+        link.removeAttribute("aria-current");
+      }
+    });
+  };
+
+  const updateActiveSection = () => {
+    if (!sections.length) return;
+
+    const probe = window.scrollY + 140;
+    let current = null;
+
+    sections.forEach((section) => {
+      const top = section.getBoundingClientRect().top + window.scrollY;
+      if (top <= probe) current = section.id;
+    });
+
+    const atBottom =
+      window.innerHeight + window.scrollY >= doc.documentElement.scrollHeight - 4;
+
+    setActiveSection(atBottom ? "contact" : current);
+  };
+
+  if (sections.length) {
+    let navTicking = false;
+
+    window.addEventListener(
+      "scroll",
+      () => {
+        if (!navTicking) {
+          window.requestAnimationFrame(() => {
+            updateActiveSection();
+            navTicking = false;
+          });
+          navTicking = true;
+        }
+      },
+      { passive: true }
+    );
+
+    window.addEventListener("resize", updateActiveSection);
+    window.addEventListener("load", updateActiveSection);
+    updateActiveSection();
+  }
+
+  /* ------------------------------------------------------------------------
+     Reveal on scroll
+     ------------------------------------------------------------------------ */
+
+  const reveals = Array.from(doc.querySelectorAll(".reveal"));
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  if (reveals.length) {
+    if (reducedMotion.matches || !("IntersectionObserver" in window)) {
+      reveals.forEach((element) => element.classList.add("is-visible"));
+    } else {
+      reveals.forEach((element) => element.classList.add("is-pending"));
+
+      const revealObserver = new IntersectionObserver(
+        (entries, observer) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("is-visible");
+              entry.target.classList.remove("is-pending");
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        {
+          rootMargin: "0px 0px -8% 0px",
+          threshold: 0.08,
+        }
+      );
+
+      reveals.forEach((element) => revealObserver.observe(element));
+    }
+  }
+
+  /* ------------------------------------------------------------------------
+     Contact form
+     ------------------------------------------------------------------------ */
+
+  const form = doc.getElementById("contact-form");
+
+  if (form instanceof HTMLFormElement) {
+    form.noValidate = true;
+
+    const status = doc.getElementById("form-status");
+    const submitButton = form.querySelector('button[type="submit"]');
+
+    const fields = [
+      {
+        input: doc.getElementById("name"),
+        error: doc.getElementById("name-error"),
+        validate(value) {
+          const clean = value.trim();
+          if (clean.length < 2) return "Please enter your name.";
+          if (clean.length > 80) return "Please keep your name under 80 characters.";
+          return true;
+        },
+      },
+      {
+        input: doc.getElementById("email"),
+        error: doc.getElementById("email-error"),
+        validate(value) {
+          const clean = value.trim();
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) {
+            return "Please enter a valid email address.";
+          }
+          return true;
+        },
+      },
+      {
+        input: doc.getElementById("subject"),
+        error: doc.getElementById("subject-error"),
+        validate(value) {
+          const clean = value.trim();
+          if (clean.length < 3) return "Please add a short subject.";
+          return true;
+        },
+      },
+      {
+        input: doc.getElementById("message"),
+        error: doc.getElementById("message-error"),
+        validate(value) {
+          const clean = value.trim();
+          if (clean.length < 10) return "Please write at least 10 characters.";
+          return true;
+        },
+      },
+    ].filter((field) => field.input && field.error);
+
+    const setFieldState = (field, message) => {
+      const wrapper = field.input.closest(".field");
+      if (!wrapper) return;
+
+      if (message) {
+        wrapper.classList.add("is-invalid");
+        field.input.setAttribute("aria-invalid", "true");
+        field.error.textContent = message;
+      } else {
+        wrapper.classList.remove("is-invalid");
+        field.input.removeAttribute("aria-invalid");
+        field.error.textContent = "";
+      }
+    };
+
+    fields.forEach((field) => {
+      field.input.addEventListener("input", () => {
+        const wrapper = field.input.closest(".field");
+        if (!wrapper || !wrapper.classList.contains("is-invalid")) return;
+        const result = field.validate(field.input.value);
+        setFieldState(field, result === true ? "" : result);
+      });
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      if (!status || !submitButton) return;
+
+      const honeypot = form.querySelector('input[name="botcheck"]');
+      if (honeypot instanceof HTMLInputElement && honeypot.checked) {
+        status.className = "form-status form-status--success";
+        status.textContent = "Message sent. I'll get back to you soon.";
+        form.reset();
+        return;
+      }
+
+      let firstInvalid = null;
+
+      fields.forEach((field) => {
+        const result = field.validate(field.input.value);
+        if (result === true) {
+          setFieldState(field, "");
+        } else {
+          setFieldState(field, result);
+          if (!firstInvalid) firstInvalid = field.input;
         }
       });
-    }, { threshold: 0.08, rootMargin: '0px 0px -4% 0px' });
-    revealEls.forEach(el => observer.observe(el));
-  } else {
-    revealEls.forEach(el => el.classList.add('in-view'));
-  }
-}
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
-} else {
-  init();
-}
+      if (firstInvalid) {
+        firstInvalid.focus();
+        return;
+      }
+
+      const originalButton = submitButton.innerHTML;
+      submitButton.disabled = true;
+      submitButton.textContent = "Sending…";
+      form.setAttribute("aria-busy", "true");
+      status.className = "form-status";
+      status.textContent = "";
+
+      try {
+        const response = await fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok || !data || data.success !== true) {
+          throw new Error(
+            data && typeof data.message === "string"
+              ? data.message
+              : "The form service did not accept the message."
+          );
+        }
+
+        form.reset();
+        fields.forEach((field) => setFieldState(field, ""));
+        status.className = "form-status form-status--success";
+        status.textContent = "Message sent. I'll get back to you soon.";
+      } catch (error) {
+        status.className = "form-status form-status--error";
+        status.textContent =
+          "The message could not be sent. Please email me directly at sayanjagulia489@gmail.com.";
+      } finally {
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalButton;
+        form.removeAttribute("aria-busy");
+      }
+    });
+  }
+
+  /* ------------------------------------------------------------------------
+     Footer year
+     ------------------------------------------------------------------------ */
+
+  const year = doc.getElementById("year");
+  if (year) {
+    year.textContent = String(new Date().getFullYear());
+  }
+})();

@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750" role="img" aria-labelledby="ragTitle ragDesc">
+  <title id="ragTitle">RAG News API architecture</title>
+  <desc id="ragDesc">News articles are ingested, embedded with Jina, and stored in Qdrant. A chat request retrieves relevant passages from Qdrant, uses Gemini to generate an answer, caches session context in Redis, and writes interaction logs to MySQL.</desc>
+  <defs>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M 48 0 L 0 0 0 48" fill="none" stroke="#17231d" stroke-width="1"/>
+    </pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#35d39a"/>
+    </marker>
+    <marker id="arrowMuted" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5b7265"/>
+    </marker>
+    <style>
+      .bg { fill: #0a0f0c; }
+      .grid { fill: url(#grid); }
+      .box { fill: #101814; stroke: #26382e; stroke-width: 1.5; }
+      .box-accent { fill: #0e1c15; stroke: #35d39a; stroke-width: 1.5; }
+      .label { font-family: 'Inter', 'Segoe UI', sans-serif; font-size: 17px; font-weight: 600; fill: #edf6f0; }
+      .sub { font-family: 'JetBrains Mono', 'Consolas', monospace; font-size: 10px; letter-spacing: 1.4px; fill: #7f9788; }
+      .mono { font-family: 'JetBrains Mono', 'Consolas', monospace; font-size: 12px; fill: #6ee7b7; }
+      .body { font-family: 'Inter', 'Segoe UI', sans-serif; font-size: 12px; fill: #93a99b; }
+      .arrow { stroke: #35d39a; stroke-width: 1.7; fill: none; }
+      .arrow-muted { stroke: #5b7265; stroke-width: 1.4; fill: none; stroke-dasharray: 5 5; }
+      .title { font-family: 'Inter', 'Segoe UI', sans-serif; font-size: 34px; font-weight: 700; fill: #f1f7f3; letter-spacing: -1px; }
+      .kicker { font-family: 'JetBrains Mono', 'Consolas', monospace; font-size: 11px; letter-spacing: 2px; fill: #35d39a; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1200" height="750"/>
+  <rect class="grid" width="1200" height="750"/>
+  <rect x="0" y="0" width="6" height="750" fill="#35d39a"/>
+
+  <text x="56" y="58" class="kicker">SYSTEM ARCHITECTURE</text>
+  <text x="56" y="100" class="title">RAG News API</text>
+  <text x="56" y="128" class="body">Ingestion and retrieval paths for grounded answers over a news corpus.</text>
+
+  <!-- Ingestion row -->
+  <text x="56" y="190" class="sub">INGESTION</text>
+  <rect x="56" y="212" width="200" height="86" rx="12" class="box"/>
+  <text x="76" y="245" class="label">News sources</text>
+  <text x="76" y="270" class="body">articles + metadata</text>
+
+  <line x1="256" y1="255" x2="308" y2="255" class="arrow" marker-end="url(#arrow)"/>
+  <rect x="316" y="212" width="200" height="86" rx="12" class="box-accent"/>
+  <text x="336" y="245" class="label">POST /ingest</text>
+  <text x="336" y="270" class="body">validate + store</text>
+
+  <line x1="516" y1="255" x2="568" y2="255" class="arrow" marker-end="url(#arrow)"/>
+  <rect x="576" y="212" width="200" height="86" rx="12" class="box"/>
+  <text x="596" y="245" class="label">Jina embeddings</text>
+  <text x="596" y="270" class="body">vector representation</text>
+
+  <line x1="776" y1="255" x2="828" y2="255" class="arrow" marker-end="url(#arrow)"/>
+  <rect x="836" y="212" width="308" height="86" rx="12" class="box"/>
+  <text x="856" y="245" class="label">Qdrant vector store</text>
+  <text x="856" y="270" class="body">semantic retrieval index</text>
+
+  <!-- Chat row -->
+  <text x="56" y="386" class="sub">QUERY + GENERATION</text>
+  <rect x="56" y="408" width="200" height="86" rx="12" class="box"/>
+  <text x="76" y="441" class="label">Client question</text>
+  <text x="76" y="466" class="body">natural-language query</text>
+
+  <line x1="256" y1="451" x2="308" y2="451" class="arrow" marker-end="url(#arrow)"/>
+  <rect x="316" y="408" width="200" height="86" rx="12" class="box-accent"/>
+  <text x="336" y="441" class="label">POST /chat</text>
+  <text x="336" y="466" class="body">session + question</text>
+
+  <line x1="516" y1="451" x2="568" y2="451" class="arrow" marker-end="url(#arrow)"/>
+  <rect x="576" y="408" width="200" height="86" rx="12" class="box"/>
+  <text x="596" y="441" class="label">Retriever</text>
+  <text x="596" y="466" class="body">top-k passages</text>
+
+  <line x1="776" y1="451" x2="828" y2="451" class="arrow" marker-end="url(#arrow)"/>
+  <rect x="836" y="408" width="308" height="86" rx="12" class="box"/>
+  <text x="856" y="441" class="label">Gemini</text>
+  <text x="856" y="466" class="body">grounded answer generation</text>
+
+  <!-- Feedback from Qdrant to retriever -->
+  <path d="M 990 298 L 990 338 L 676 338 L 676 400" class="arrow-muted" marker-end="url(#arrowMuted)"/>
+  <text x="760" y="330" class="body">vector lookup</text>
+
+  <!-- Persistence row -->
+  <text x="56" y="586" class="sub">PERSISTENCE</text>
+  <rect x="316" y="608" width="200" height="76" rx="12" class="box"/>
+  <text x="336" y="638" class="label">Redis</text>
+  <text x="336" y="660" class="body">session memory</text>
+
+  <rect x="576" y="608" width="200" height="76" rx="12" class="box"/>
+  <text x="596" y="638" class="label">MySQL</text>
+  <text x="596" y="660" class="body">articles + logs</text>
+
+  <path d="M 416 494 L 416 600" class="arrow-muted" marker-end="url(#arrowMuted)"/>
+  <path d="M 676 494 L 676 600" class="arrow-muted" marker-end="url(#arrowMuted)"/>
+  <text x="430" y="560" class="body">short-term context</text>
+  <text x="690" y="560" class="body">interaction history</text>
+
+  <line x1="56" y1="716" x2="1144" y2="716" stroke="#1d2c24" stroke-width="1"/>
+  <text x="56" y="738" class="body">Express 5  ·  Docker Compose  ·  Swagger  ·  Jina  ·  Qdrant  ·  Redis  ·  MySQL  ·  Gemini</text>
+</svg>

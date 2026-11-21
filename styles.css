@@ -790,6 +790,34 @@ body.light .skill-list {
   aspect-ratio: 16/9;
 }
 
+.project-placeholder {
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  aspect-ratio: 16/9;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.28), rgba(15, 23, 42, 0.9));
+}
+
+.project-placeholder-inner {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.project-placeholder-inner i {
+  color: var(--accent);
+  font-size: 38px;
+}
+
+body.light .project-placeholder {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.16), rgba(226, 232, 240, 0.9));
+}
+
 .project-body {
   padding: 18px;
 }
@@ -1651,4 +1679,3 @@ body.light .timeline-inst {
     align-items: flex-start;
   }
 }
-
